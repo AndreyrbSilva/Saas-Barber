@@ -1,8 +1,15 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import BookingPage from "./pages/public/BookingPage";
+import LoginPage from "./pages/admin/LoginPage";
+
 function App() {
   return(
-    <>
-      <h1>Barbearia SaaS</h1>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/agendar" element={<BookingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
