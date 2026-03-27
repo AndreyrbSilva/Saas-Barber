@@ -167,6 +167,44 @@ export default function BarberSchedulePage() {
             </div>
           </div>
 
+          {/* Lista de agendamentos */}
+          <div className="bg-stone-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-stone-700 flex items-center justify-between">
+              <h2 className="text-white font-semibold">
+                {diaSelecionado === 0 ? "Hoje" : semana[diaSelecionado].label}
+              </h2>
+              <span className="text-stone-400 text-sm">{ativos.length} agendamento(s)</span>
+            </div>
+
+            {dia.agendamentos.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-stone-400 text-sm">Nenhum agendamento</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-stone-700">
+                {dia.agendamentos.map(ag => (
+                  <div key={ag.id} className="px-5 py-4 flex items-center gap-4">
+                    <span className="text-amber-400 font-bold text-sm w-12 flex-shrink-0">
+                      {ag.horario}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium text-sm truncate">{ag.cliente}</p>
+                      <p className="text-stone-400 text-xs">{ag.servicos.join(", ")}</p>
+                    </div>
+                    <span className={`
+                      text-xs font-medium px-3 py-1 rounded-md border flex-shrink-0 bg-zinc-700
+                      ${ag.status === "confirmado" ? "border-emerald-500 text-emerald-400" : ""}
+                      ${ag.status === "pendente"   ? "border-amber-500 text-amber-400"     : ""}
+                      ${ag.status === "cancelado"  ? "border-red-500 text-red-400"         : ""}
+                    `}>
+                      {ag.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
       </main>
 
