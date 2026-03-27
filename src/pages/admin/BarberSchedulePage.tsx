@@ -5,6 +5,31 @@ interface DiaAgenda {
   iso: string
   label: string
   bloqueado: boolean
+  agendamentos: Agendamento[]
+}
+
+interface Agendamento {
+  id: string
+  cliente: string
+  telefone: string
+  servicos: string[]
+  horario: string
+  status: "confirmado" | "pendente" | "cancelado"
+}
+
+// TODO: substituir por GET /barbeiro/:id/agenda quando backend estiver pronto
+const AGENDAMENTOS_MOCK: Agendamento[] = [
+  { id: "1", cliente: "João Silva",   telefone: "(81) 99999-1111", servicos: ["Corte"],        horario: "08:00", status: "confirmado" },
+  { id: "2", cliente: "Pedro Souza",  telefone: "(81) 99999-2222", servicos: ["Barba"],         horario: "09:00", status: "confirmado" },
+  { id: "3", cliente: "Lucas Lima",   telefone: "(81) 99999-3333", servicos: ["Corte + Barba"], horario: "10:00", status: "pendente"   },
+  { id: "4", cliente: "Marcos Costa", telefone: "(81) 99999-4444", servicos: ["Corte"],        horario: "11:00", status: "confirmado" },
+  { id: "5", cliente: "Bruno Alves",  telefone: "(81) 99999-5555", servicos: ["Pigmentação"],   horario: "14:00", status: "cancelado"  },
+  { id: "6", cliente: "Rafael Dias",  telefone: "(81) 99999-6666", servicos: ["Corte"],        horario: "15:30", status: "confirmado" },
+]
+
+const PRECOS: Record<string, number> = {
+  "Corte": 35, "Barba": 15, "Corte + Barba": 45,
+  "Sobrancelha": 10, "Pigmentação": 15, "Reflexo": 10,
 }
 
 // ─── Dados estáticos ──────────────────────────────────────
@@ -28,6 +53,7 @@ function gerarSemana(): DiaAgenda[] {
       iso: data.toISOString().split("T")[0],
       label: data.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }),
       bloqueado: false,
+      agendamentos: i === 0 ? AGENDAMENTOS_MOCK : [],
     }
   })
 }
@@ -37,6 +63,12 @@ export default function BarberSchedulePage() {
   const [navAtivo, setNavAtivo]             = useState("Agenda")
   const [semana, setSemana]                 = useState<DiaAgenda[]>(gerarSemana)
   const [diaSelecionado, setDiaSelecionado] = useState(0)
+  const dia         = semana[diaSelecionado]
+  const ativos      = dia.agendamentos.filter(a => a.status !== "cancelado")
+  const proximo     = dia.agendamentos.find(a => a.status === "confirmado")
+  const faturamento = ativos.reduce((acc, a) =>
+    acc + a.servicos.reduce((s, sv) => s + (PRECOS[sv] ?? 0), 0), 0
+  )
 
   return (
     <div className="min-h-screen bg-stone-900 flex">
@@ -115,6 +147,24 @@ export default function BarberSchedulePage() {
                 <span className="font-bold text-sm">{d.label.split(",")[1]?.trim()}</span>
               </button>
             ))}
+          </div>
+
+          {/* Cards de resumo */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-stone-800 rounded-xl p-4">
+              <p className="text-stone-400 text-xs mb-1">Agendamentos</p>
+              <p className="text-white font-bold text-2xl">{ativos.length}</p>
+            </div>
+            <div className="bg-stone-800 rounded-xl p-4">
+              <p className="text-stone-400 text-xs mb-1">Faturamento</p>
+              <p className="text-amber-400 font-bold text-2xl">R${faturamento}</p>
+            </div>
+            <div className="bg-stone-800 rounded-xl p-4">
+              <p className="text-stone-400 text-xs mb-1">Próximo</p>
+              <p className="text-white font-bold text-sm leading-tight">
+                {proximo ? `${proximo.horario} · ${proximo.cliente.split(" ")[0]}` : "—"}
+              </p>
+            </div>
           </div>
 
         </div>
