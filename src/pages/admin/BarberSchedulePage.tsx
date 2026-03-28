@@ -5,6 +5,7 @@ interface DiaAgenda {
   iso: string
   label: string
   bloqueado: boolean
+  motivoBloqueio?: "falta" | "folga" | "feriado"
   agendamentos: Agendamento[]
 }
 
@@ -17,8 +18,9 @@ interface Agendamento {
   status: "confirmado" | "pendente" | "cancelado"
 }
 
+// ─── Dados estáticos ──────────────────────────────────────
 // TODO: substituir por GET /barbeiro/:id/agenda quando backend estiver pronto
-const AGENDAMENTOS_MOCK: Agendamento[] = [
+const AGENDAMENTOS_DIA_0: Agendamento[] = [
   { id: "1", cliente: "João Silva",   telefone: "(81) 99999-1111", servicos: ["Corte"],        horario: "08:00", status: "confirmado" },
   { id: "2", cliente: "Pedro Souza",  telefone: "(81) 99999-2222", servicos: ["Barba"],         horario: "09:00", status: "confirmado" },
   { id: "3", cliente: "Lucas Lima",   telefone: "(81) 99999-3333", servicos: ["Corte + Barba"], horario: "10:00", status: "pendente"   },
@@ -27,12 +29,36 @@ const AGENDAMENTOS_MOCK: Agendamento[] = [
   { id: "6", cliente: "Rafael Dias",  telefone: "(81) 99999-6666", servicos: ["Corte"],        horario: "15:30", status: "confirmado" },
 ]
 
+const AGENDAMENTOS_DIA_1: Agendamento[] = [
+  { id: "7",  cliente: "Felipe Nunes",   telefone: "(81) 99999-7777", servicos: ["Corte"],        horario: "09:00", status: "confirmado" },
+  { id: "8",  cliente: "Gabriel Melo",   telefone: "(81) 99999-8888", servicos: ["Barba"],         horario: "10:30", status: "confirmado" },
+  { id: "9",  cliente: "Thiago Ferreira",telefone: "(81) 99999-9999", servicos: ["Corte + Barba"], horario: "13:00", status: "pendente"   },
+]
+
+const AGENDAMENTOS_DIA_2: Agendamento[] = [
+  { id: "10", cliente: "André Lopes",  telefone: "(81) 98888-1111", servicos: ["Sobrancelha"],   horario: "08:30", status: "confirmado" },
+  { id: "11", cliente: "Carlos Rocha", telefone: "(81) 98888-2222", servicos: ["Corte"],        horario: "10:00", status: "confirmado" },
+  { id: "12", cliente: "Diego Santos", telefone: "(81) 98888-3333", servicos: ["Pigmentação"],   horario: "11:30", status: "cancelado"  },
+  { id: "13", cliente: "Eduardo Lima", telefone: "(81) 98888-4444", servicos: ["Corte + Barba"], horario: "14:30", status: "confirmado" },
+]
+
+const AGENDAMENTOS_DIA_3: Agendamento[] = [
+  { id: "14", cliente: "Fábio Carvalho", telefone: "(81) 98888-5555", servicos: ["Barba"],  horario: "09:30", status: "confirmado" },
+  { id: "15", cliente: "Gustavo Pires",  telefone: "(81) 98888-6666", servicos: ["Corte"],  horario: "11:00", status: "pendente"   },
+]
+
+const AGENDAMENTOS_POR_DIA: Record<number, Agendamento[]> = {
+  0: AGENDAMENTOS_DIA_0,
+  1: AGENDAMENTOS_DIA_1,
+  2: AGENDAMENTOS_DIA_2,
+  3: AGENDAMENTOS_DIA_3,
+}
+
 const PRECOS: Record<string, number> = {
   "Corte": 35, "Barba": 15, "Corte + Barba": 45,
   "Sobrancelha": 10, "Pigmentação": 15, "Reflexo": 10,
 }
 
-// ─── Dados estáticos ──────────────────────────────────────
 // TODO: substituir por dados do barbeiro logado
 const BARBEIRO = { nome: "David", especialidade: "Cortes modernos", avatar: "DA" }
 
@@ -53,7 +79,7 @@ function gerarSemana(): DiaAgenda[] {
       iso: data.toISOString().split("T")[0],
       label: data.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }),
       bloqueado: false,
-      agendamentos: i === 0 ? AGENDAMENTOS_MOCK : [],
+      agendamentos: AGENDAMENTOS_POR_DIA[i] ?? [],
     }
   })
 }
@@ -63,12 +89,23 @@ export default function BarberSchedulePage() {
   const [navAtivo, setNavAtivo]             = useState("Agenda")
   const [semana, setSemana]                 = useState<DiaAgenda[]>(gerarSemana)
   const [diaSelecionado, setDiaSelecionado] = useState(0)
+  const [bloqueioMotivo, setBloqueioMotivo] = useState<"falta" | "folga" | "feriado">("folga")
+
   const dia         = semana[diaSelecionado]
   const ativos      = dia.agendamentos.filter(a => a.status !== "cancelado")
   const proximo     = dia.agendamentos.find(a => a.status === "confirmado")
   const faturamento = ativos.reduce((acc, a) =>
     acc + a.servicos.reduce((s, sv) => s + (PRECOS[sv] ?? 0), 0), 0
   )
+
+  const toggleBloqueio = () => {
+    setSemana(prev => prev.map((d, i) => {
+      if (i !== diaSelecionado) return d
+      return d.bloqueado
+        ? { ...d, bloqueado: false, motivoBloqueio: undefined }
+        : { ...d, bloqueado: true,  motivoBloqueio: bloqueioMotivo }
+    }))
+  }
 
   return (
     <div className="min-h-screen bg-stone-900 flex">
@@ -145,6 +182,9 @@ export default function BarberSchedulePage() {
               >
                 <span className="capitalize">{d.label.split(",")[0]}</span>
                 <span className="font-bold text-sm">{d.label.split(",")[1]?.trim()}</span>
+                {d.agendamentos.length > 0 && !d.bloqueado && (
+                  <span className={`mt-1 w-1.5 h-1.5 rounded-full ${diaSelecionado === i ? "bg-stone-900" : "bg-amber-400"}`} />
+                )}
               </button>
             ))}
           </div>
@@ -176,7 +216,12 @@ export default function BarberSchedulePage() {
               <span className="text-stone-400 text-sm">{ativos.length} agendamento(s)</span>
             </div>
 
-            {dia.agendamentos.length === 0 ? (
+            {dia.bloqueado ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-stone-400 text-sm">Dia bloqueado</p>
+                <p className="text-stone-500 text-xs mt-1 capitalize">{dia.motivoBloqueio}</p>
+              </div>
+            ) : dia.agendamentos.length === 0 ? (
               <div className="px-5 py-10 text-center">
                 <p className="text-stone-400 text-sm">Nenhum agendamento</p>
               </div>
@@ -203,6 +248,42 @@ export default function BarberSchedulePage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Bloquear dia */}
+          <div className="bg-stone-800 rounded-2xl p-5 space-y-3">
+            <h2 className="text-white font-semibold">Bloquear este dia</h2>
+
+            <div className="flex gap-2">
+              {(["falta", "folga", "feriado"] as const).map(m => (
+                <button
+                  key={m}
+                  onClick={() => setBloqueioMotivo(m)}
+                  className={`
+                    flex-1 py-2 rounded-xl text-sm font-medium transition-all
+                    ${bloqueioMotivo === m
+                      ? "bg-amber-400 text-stone-900"
+                      : "bg-stone-700 text-stone-300 hover:bg-stone-600"
+                    }
+                  `}
+                >
+                  {m.charAt(0).toUpperCase() + m.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={toggleBloqueio}
+              className={`
+                w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95
+                ${dia.bloqueado
+                  ? "bg-stone-600 text-stone-300 hover:bg-stone-500"
+                  : "bg-red-500 text-white hover:bg-red-400"
+                }
+              `}
+            >
+              {dia.bloqueado ? "Desbloquear dia" : "Bloquear dia"}
+            </button>
           </div>
 
         </div>
