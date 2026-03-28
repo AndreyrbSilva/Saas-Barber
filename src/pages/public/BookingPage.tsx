@@ -233,7 +233,7 @@ export default function BookingPage() {
   // ── Render ───────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-stone-50 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg bg-stone-100/90 rounded-2xl shadow-2xl overflow-hidden">
 
         <div className="bg-stone-900 px-8 py-5 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center text-stone-900 font-bold text-sm">
